@@ -198,6 +198,7 @@ bool read_file(const char *path, size_t size_hint, char **data, size_t *size);
 char *read_text_file(const char *path, size_t size_hint);
 char *subst_env_in_string(const char *str, char **errmsg);
 void set_cloexec_flag(int fd);
+void str_replace(char *target, const char *needle, const char *replacement);
 
 // ----------------------------------------------------------------------------
 // stats.c

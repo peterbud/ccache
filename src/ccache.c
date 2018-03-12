@@ -870,6 +870,14 @@ process_preprocessed_file(struct mdfour *hash, const char *path, bool pump)
 			}
 			// p and q span the include file path.
 			char *inc_path = x_strndup(p, q - p);
+
+#ifdef _WIN32
+			// gcc-E [file.c] -g adds CWD with double forward slashes
+			// like:
+			// # 1 "C:\\msys64\\home\\user\\test//"
+			// double forward slashes should be replaced with simple slashes
+			str_replace(inc_path, "\\\\", "\\");
+#endif
 			if (!has_absolute_include_headers) {
 				has_absolute_include_headers = is_absolute_path(inc_path);
 			}

@@ -1097,6 +1097,15 @@ x_realpath(const char *path)
 	} else {
 		snprintf(ret, maxlen, "%s", path);
 		p = ret;
+
+/*
+		//replace forward slashes with backward slashes inplace
+		char *tmp;
+		for(tmp = p; *tmp; tmp++)	{
+			if(*tmp == '/')
+				*tmp = '\\';
+		}
+*/
 	}
 #else
 	// Yes, there are such systems. This replacement relies on the fact that when
@@ -1672,4 +1681,37 @@ set_cloexec_flag(int fd)
 #else
 	(void)fd;
 #endif
+}
+
+void str_replace(char *target, const char *searchstring, const char *replacement)
+{
+	char buffer[1024] = { 0 };
+	char *insert_point = &buffer[0];
+	const char *tmp = target;
+	size_t searchstring_len = strlen(searchstring);
+	size_t repl_len = strlen(replacement);
+
+	while (1) {
+		const char *p = strstr(tmp, searchstring);
+
+		// walked past last occurrence of needle; copy remaining part
+		if (p == NULL) {
+			strcpy(insert_point, tmp);
+			break;
+		}
+
+		// copy part before needle
+		memcpy(insert_point, tmp, p - tmp);
+		insert_point += p - tmp;
+
+		// copy replacement string
+		memcpy(insert_point, replacement, repl_len);
+		insert_point += repl_len;
+
+		// adjust pointers, move on
+		tmp = p + searchstring_len;
+	}
+
+	// write altered string back to target
+	strcpy(target, buffer);
 }
