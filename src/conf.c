@@ -185,6 +185,9 @@ verify_absolute_path(void *value, char **errmsg)
 {
 	char **path = (char **)value;
 	assert(*path);
+#ifdef _WIN32
+	str_replace(*path, "/", "\\");
+#endif
 	if (str_eq(*path, "")) {
 		// The empty string means "disable" in this case.
 		return true;

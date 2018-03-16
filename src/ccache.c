@@ -2730,7 +2730,22 @@ cc_process_args(struct args *args, struct args **preprocessor_args,
 		// Same as above but options with concatenated argument beginning with a
 		// slash.
 		if (argv[i][0] == '-') {
+#ifndef _WIN32
 			char *slash_pos = strchr(argv[i], '/');
+#else
+			// On windows the concatenated argumets formed
+			// like -IC:\path\to\file
+			// or -IC:/path/to/file
+			char * slash_pos= strstr(argv[i], (char*)":\\");
+			if(slash_pos == NULL) {
+				slash_pos= strstr(argv[i], (char*)":/");
+			}
+			if( slash_pos != NULL) {
+				slash_pos--;
+				// To be on the safe side
+				str_replace(slash_pos, "/", "\\");
+			}
+#endif
 			if (slash_pos) {
 				char *option = x_strndup(argv[i], slash_pos - argv[i]);
 				if (compopt_takes_concat_arg(option) && compopt_takes_path(option)) {

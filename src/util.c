@@ -1097,15 +1097,7 @@ x_realpath(const char *path)
 	} else {
 		snprintf(ret, maxlen, "%s", path);
 		p = ret;
-
-/*
-		//replace forward slashes with backward slashes inplace
-		char *tmp;
-		for(tmp = p; *tmp; tmp++)	{
-			if(*tmp == '/')
-				*tmp = '\\';
-		}
-*/
+		str_replace(p, "/", "\\")
 	}
 #else
 	// Yes, there are such systems. This replacement relies on the fact that when
@@ -1123,6 +1115,7 @@ x_realpath(const char *path)
 	if (p) {
 		p = x_strdup(p);
 		free(ret);
+		cc_log("x_realpath return: %s", p);
 		return p;
 	}
 	free(ret);
@@ -1295,11 +1288,17 @@ common_dir_prefix_length(const char *s1, const char *s2)
 	const char *p1 = s1;
 	const char *p2 = s2;
 
+#ifndef _WIN32
+	char dirseparator = '/';
+#else
+	char dirseparator = '\\';
+#endif
+
 	while (*p1 && *p2 && *p1 == *p2) {
 		++p1;
 		++p2;
 	}
-	while ((*p1 && *p1 != '/') || (*p2 && *p2 != '/')) {
+	while ((*p1 && *p1 != dirseparator) || (*p2 && *p2 != dirseparator)) {
 		p1--;
 		p2--;
 	}
