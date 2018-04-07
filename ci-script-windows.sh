@@ -66,7 +66,7 @@ success() { local status="${1}"; local items=("${@:2}"); _status success "${stat
 message() { local status="${1}"; local items=("${@:2}"); _status message "${status}"  "${items[@]}"; }
 # Install build environment and build
 PATH=/c/msys64/%MSYSTEM%/bin:$PATH
-execute 'Installing base-devel and toolchain'  pacman -S --needed --noconfirm mingw-w64-x86_64-toolchain
+execute 'Installing base-devel and toolchain'  pacman -S --needed --noconfirm mingw-w64-$MSYS2_ARCH-toolchain
 execute 'Installing dependencies' pacman -S --needed --noconfirm  mingw-w64-$MSYS2_ARCH-{zlib,gcc-libs}
 execute 'Building ccache' build_ccache
 execute 'Testing ccache' test_ccache
