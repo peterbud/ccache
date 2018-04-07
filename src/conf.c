@@ -56,6 +56,16 @@ parse_env_string(const char *str, void *result, char **errmsg)
 	char **value = (char **)result;
 	free(*value);
 	*value = subst_env_in_string(str, errmsg);
+#ifdef _WIN32
+	// Make sure the path is formatted properly
+	char *temppath;
+	temppath = strreplace(*value, "/", "\\");
+	if (temppath) {
+		free(*value);
+		*value = temppath;
+	}
+#endif // _WIN32
+
 	return *value != NULL;
 }
 

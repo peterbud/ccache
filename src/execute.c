@@ -93,7 +93,9 @@ win32getshell(char *path)
 	char *sh = NULL;
 	const char *ext = get_extension(path);
 	if (ext && strcasecmp(ext, ".sh") == 0 && (path_env = getenv("PATH"))) {
-		sh = find_executable_in_path("sh.exe", NULL, path_env);
+		cc_log("w32getshell: %s",path_env);
+		sh = find_executable_in_path("sh", NULL, path_env);
+		cc_log("w32getshell SH result: %s",sh);
 	}
 	if (!sh && getenv("CCACHE_DETECT_SHEBANG")) {
 		// Detect shebang.
@@ -103,7 +105,7 @@ win32getshell(char *path)
 			fgets(buf, sizeof(buf), fp);
 			buf[9] = 0;
 			if (str_eq(buf, "#!/bin/sh") && (path_env = getenv("PATH"))) {
-				sh = find_executable_in_path("sh.exe", NULL, path_env);
+				sh = find_executable_in_path("sh", NULL, path_env);
 			}
 			fclose(fp);
 		}
@@ -115,7 +117,8 @@ win32getshell(char *path)
 void add_exe_ext_if_no_to_fullpath(char *full_path_win_ext, size_t max_size,
                                    const char *ext, const char *path) {
 	if (!ext || (!str_eq(".exe", ext)
-	             && !str_eq(".bat", ext)
+	             && !str_eq(".sh", ext)
+				 && !str_eq(".bat", ext)
 	             && !str_eq(".EXE", ext)
 	             && !str_eq(".BAT", ext))) {
 		snprintf(full_path_win_ext, max_size, "%s.exe", path);
@@ -165,6 +168,8 @@ win32execute(char *path, char **argv, int doreturn,
 	const char *ext = strrchr(path, '.');
 	char full_path_win_ext[MAX_PATH] = {0};
 	add_exe_ext_if_no_to_fullpath(full_path_win_ext, MAX_PATH, ext, path);
+	cc_log("w32execute: %s",full_path_win_ext);
+	cc_log("w32execute args: %s",args);
 	BOOL ret =
 	  CreateProcess(full_path_win_ext, args, NULL, NULL, 1, 0, NULL, NULL,
 	                &si, &pi);

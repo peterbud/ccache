@@ -35,6 +35,7 @@ get_root(void)
 #endif
 }
 
+/*
 static char *
 get_posix_path(char *path)
 {
@@ -59,6 +60,7 @@ get_posix_path(char *path)
 	return posix;
 #endif
 }
+*/
 
 TEST_SUITE(argument_processing)
 
@@ -189,7 +191,7 @@ TEST(sysroot_should_be_rewritten_if_basedir_is_used)
 	free(arg_string);
 
 	CHECK(cc_process_args(orig, &act_cpp, &act_cc));
-	CHECK_STR_EQ(act_cpp->argv[1], "--sysroot=./foo");
+	CHECK_STR_EQ(act_cpp->argv[1], "--sysroot=." DIR_DELIM_STRING "foo");
 
 	args_free(orig);
 	args_free(act_cpp);
@@ -213,7 +215,7 @@ TEST(sysroot_with_separate_argument_should_be_rewritten_if_basedir_is_used)
 
 	CHECK(cc_process_args(orig, &act_cpp, &act_cc));
 	CHECK_STR_EQ(act_cpp->argv[1], "--sysroot");
-	CHECK_STR_EQ(act_cpp->argv[2], "./foo");
+	CHECK_STR_EQ(act_cpp->argv[2], "." DIR_DELIM_STRING "foo");
 
 	args_free(orig);
 	args_free(act_cpp);
@@ -369,11 +371,11 @@ TEST(fprofile_flag_with_existing_dir_should_be_rewritten_to_real_path)
 TEST(fprofile_flag_with_nonexisting_dir_should_not_be_rewritten)
 {
 	struct args *orig = args_init_from_string(
-	  "gcc -c -fprofile-generate=some/dir foo.c");
+	  "gcc -c -fprofile-generate=some" DIR_DELIM_STRING "dir foo.c");
 	struct args *exp_cpp = args_init_from_string(
-	  "gcc -fprofile-generate=some/dir");
+	  "gcc -fprofile-generate=some" DIR_DELIM_STRING "dir");
 	struct args *exp_cc = args_init_from_string(
-	  "gcc -fprofile-generate=some/dir -c");
+	  "gcc -fprofile-generate=some" DIR_DELIM_STRING "dir -c");
 	struct args *act_cpp = NULL, *act_cc = NULL;
 
 	create_file("foo.c", "");
@@ -401,7 +403,7 @@ TEST(isystem_flag_with_separate_arg_should_be_rewritten_if_basedir_is_used)
 	free(arg_string);
 
 	CHECK(cc_process_args(orig, &act_cpp, &act_cc));
-	CHECK_STR_EQ("./foo", act_cpp->argv[2]);
+	CHECK_STR_EQ("." DIR_DELIM_STRING "foo", act_cpp->argv[2]);
 
 	args_free(orig);
 	args_free(act_cpp);
@@ -411,25 +413,21 @@ TEST(isystem_flag_with_separate_arg_should_be_rewritten_if_basedir_is_used)
 TEST(isystem_flag_with_concat_arg_should_be_rewritten_if_basedir_is_used)
 {
 	extern char *current_working_dir;
-	char *cwd;
 	char *arg_string;
 	struct args *orig;
 	struct args *act_cpp = NULL, *act_cc = NULL;
 
 	create_file("foo.c", "");
 	free(conf->base_dir);
-	conf->base_dir = x_strdup("/"); // posix
+	conf->base_dir = get_root();
 	current_working_dir = get_cwd();
-	// Windows path doesn't work concatenated.
-	cwd = get_posix_path(current_working_dir);
-	arg_string = format("cc -isystem%s/foo -c foo.c", cwd);
+	arg_string = format("cc -isystem%s/foo -c foo.c", current_working_dir);
 	orig = args_init_from_string(arg_string);
 	free(arg_string);
 
 	CHECK(cc_process_args(orig, &act_cpp, &act_cc));
-	CHECK_STR_EQ("-isystem./foo", act_cpp->argv[1]);
+	CHECK_STR_EQ("-isystem." DIR_DELIM_STRING "foo", act_cpp->argv[1]);
 
-	free(cwd);
 	args_free(orig);
 	args_free(act_cpp);
 	args_free(act_cc);
@@ -438,25 +436,21 @@ TEST(isystem_flag_with_concat_arg_should_be_rewritten_if_basedir_is_used)
 TEST(I_flag_with_concat_arg_should_be_rewritten_if_basedir_is_used)
 {
 	extern char *current_working_dir;
-	char *cwd;
 	char *arg_string;
 	struct args *orig;
 	struct args *act_cpp = NULL, *act_cc = NULL;
 
 	create_file("foo.c", "");
 	free(conf->base_dir);
-	conf->base_dir = x_strdup("/"); // posix
+	conf->base_dir = get_root();
 	current_working_dir = get_cwd();
-	// Windows path doesn't work concatenated.
-	cwd = get_posix_path(current_working_dir);
-	arg_string = format("cc -I%s/foo -c foo.c", cwd);
+	arg_string = format("cc -I%s/foo -c foo.c", current_working_dir);
 	orig = args_init_from_string(arg_string);
 	free(arg_string);
 
 	CHECK(cc_process_args(orig, &act_cpp, &act_cc));
-	CHECK_STR_EQ("-I./foo", act_cpp->argv[1]);
+	CHECK_STR_EQ("-I." DIR_DELIM_STRING "foo", act_cpp->argv[1]);
 
-	free(cwd);
 	args_free(orig);
 	args_free(act_cpp);
 	args_free(act_cc);

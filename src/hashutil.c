@@ -163,7 +163,7 @@ hash_command_output(struct mdfour *hash, const char *command,
 	// Add "echo" command.
 	bool cmd;
 	if (str_startswith(command, "echo")) {
-		command = format("cmd.exe /c \"%s\"", command);
+		command = format("cmd.exe /c %s", command);
 		cmd = true;
 	} else if (str_startswith(command,
 	                          "%compiler%") && str_eq(compiler, "echo")) {
@@ -213,21 +213,24 @@ hash_command_output(struct mdfour *hash, const char *command,
 	if (!cmd) {
 		win32args = win32argvtos(sh, args->argv);
 	} else {
-		win32args = (char *)command;  // quoted
+		// do the %compiler% replacement
+		win32args = strreplace(command, "%compiler%", compiler);
 	}
 	BOOL ret =
 	  CreateProcess(path, win32args, NULL, NULL, 1, 0, NULL, NULL, &si, &pi);
 	CloseHandle(pipe_out[1]);
 	args_free(args);
-	free(win32args);
-	if (cmd) {
+	if (!cmd) {
+		free(win32args);
+	}
+	else {
 		free((char *)command);  // Original argument was replaced above.
 	}
 	if (ret == 0) {
 		stats_update(STATS_COMPCHECK);
 		return false;
 	}
-	int fd = _open_osfhandle((intptr_t) pipe_out[0], O_BINARY);
+	int fd = _open_osfhandle((intptr_t) pipe_out[0], O_TEXT);
 	bool ok = hash_fd(hash, fd);
 	if (!ok) {
 		cc_log("Error hashing compiler check command output: %s", strerror(errno));

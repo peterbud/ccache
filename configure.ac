@@ -9,8 +9,10 @@ AC_CONFIG_HEADER(config.h)
 
 AC_CANONICAL_HOST
 
+AC_DEFINE(_GNU_SOURCE,1,[Some tests rely on this (stpcpy) and it should be used for new programs anyway])
+
 case $host in
-    *mingw32* | *mingw64* | *cygwin* | *wince* | *mingwce*)
+    *mingw32* | *mingw64* | *cygwin* | *wince* | *mingwce* | *msys* )
         windows_os=yes
         AC_DEFINE(_WIN32_WINNT,0x0600, Windows Vista or newer is required)
         ;;
@@ -65,6 +67,7 @@ AC_CHECK_FUNCS(strndup)
 AC_CHECK_FUNCS(strtok_r)
 AC_CHECK_FUNCS(unsetenv)
 AC_CHECK_FUNCS(utimes)
+AC_CHECK_FUNCS(stpcpy)
 
 AC_CACHE_CHECK([for compar_fn_t in stdlib.h],ccache_cv_COMPAR_FN_T, [
     AC_TRY_COMPILE(

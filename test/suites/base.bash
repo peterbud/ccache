@@ -783,6 +783,7 @@ EOF
     expect_stat 'cache miss' 1
 
     # -------------------------------------------------------------------------
+if ! $HOST_OS_WINDOWS; then
     TEST "Buggy GCC 6 cpp"
 
     cat >buggy-cpp <<EOF
@@ -813,8 +814,10 @@ EOF
     expect_stat 'cache hit (direct)' 0
     expect_stat 'cache hit (preprocessed)' 1
     expect_stat 'cache miss' 1
+fi
 
     # -------------------------------------------------------------------------
+if ! $HOST_OS_WINDOWS; then
     TEST "Symlink to source directory"
 
     mkdir dir
@@ -834,8 +837,10 @@ EOF
     if [ "$(./c)" != OK ]; then
         test_failed "Incorrect header file used"
     fi
+fi
 
     # -------------------------------------------------------------------------
+if ! $HOST_OS_WINDOWS; then
     TEST "Symlink to source file"
 
     mkdir dir
@@ -855,6 +860,7 @@ EOF
     if [ "$(./c)" != OK ]; then
         test_failed "Incorrect header file used"
     fi
+fi
 
     # -------------------------------------------------------------------------
     TEST ".incbin"
@@ -869,6 +875,7 @@ EOF
     expect_stat 'unsupported code directive' 1
 
     # -------------------------------------------------------------------------
+if ! $HOST_OS_WINDOWS; then
     TEST "UNCACHED_ERR_FD"
 
     cat >compiler.sh <<'EOF'
@@ -899,6 +906,7 @@ EOF
     if [ "$stderr" != "2Pu1Cc" ]; then
         test_failed "Unexpected stderr: $stderr != 2Pu1Cc"
     fi
+fi
 
     # -------------------------------------------------------------------------
     TEST "Invalid boolean environment configuration options"

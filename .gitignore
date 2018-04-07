@@ -23,3 +23,5 @@ src/version.c
 testdir.*
 unittest/run
 unittest/suites.h
+build
+.vscode

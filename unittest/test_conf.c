@@ -96,7 +96,7 @@ TEST(conf_read_valid_config)
 #ifndef _WIN32
 	  "base_dir =  /$USER/foo/${USER} \n"
 #else
-	  "base_dir = C:/$USER/foo/${USER}\n"
+	  "base_dir = C:\\$USER\\foo\\${USER}\n"
 #endif
 	  "cache_dir=\n"
 	  "cache_dir = $USER$/${USER}/.ccache\n"
@@ -114,7 +114,7 @@ TEST(conf_read_valid_config)
 	  "extra_files_to_hash = a:b c:$USER\n"
 	  "hard_link = true\n"
 	  "hash_dir = false\n"
-	  "ignore_headers_in_manifest = a:b/c\n"
+	  "ignore_headers_in_manifest = a:b" DIR_DELIM_STRING "c\n"
 	  "keep_comments_cpp = true\n"
 	  "limit_multiple = 1.0\n"
 	  "log_file = $USER${USER} \n"
@@ -136,12 +136,8 @@ TEST(conf_read_valid_config)
 	CHECK(conf_read(conf, "ccache.conf", &errmsg));
 	CHECK(!errmsg);
 
-#ifndef _WIN32
-	CHECK_STR_EQ_FREE1(format("/%s/foo/%s", user, user), conf->base_dir);
-#else
-	CHECK_STR_EQ_FREE1(format("C:/%s/foo/%s", user, user), conf->base_dir);
-#endif
-	CHECK_STR_EQ_FREE1(format("%s$/%s/.ccache", user, user), conf->cache_dir);
+	CHECK_STR_EQ_FREE1(format("C:" DIR_DELIM_STRING "%s" DIR_DELIM_STRING "foo" DIR_DELIM_STRING "%s", user, user), conf->base_dir);
+	CHECK_STR_EQ_FREE1(format("%s$" DIR_DELIM_STRING "%s" DIR_DELIM_STRING ".ccache", user, user), conf->cache_dir);
 	CHECK_INT_EQ(4, conf->cache_dir_levels);
 	CHECK_STR_EQ("foo", conf->compiler);
 	CHECK_STR_EQ("none", conf->compiler_check);
@@ -153,7 +149,7 @@ TEST(conf_read_valid_config)
 	CHECK_STR_EQ_FREE1(format("a:b c:%s", user), conf->extra_files_to_hash);
 	CHECK(conf->hard_link);
 	CHECK(!conf->hash_dir);
-	CHECK_STR_EQ("a:b/c", conf->ignore_headers_in_manifest);
+	CHECK_STR_EQ("a:b" DIR_DELIM_STRING "c", conf->ignore_headers_in_manifest);
 	CHECK(conf->keep_comments_cpp);
 	CHECK_FLOAT_EQ(1.0, conf->limit_multiple);
 	CHECK_STR_EQ_FREE1(format("%s%s", user, user), conf->log_file);
@@ -292,9 +288,9 @@ TEST(verify_absolute_base_dir)
 	struct conf *conf = conf_create();
 	char *errmsg;
 
-	create_file("ccache.conf", "base_dir = relative/path");
+	create_file("ccache.conf", "base_dir = relative" DIR_DELIM_STRING "path");
 	CHECK(!conf_read(conf, "ccache.conf", &errmsg));
-	CHECK_STR_EQ_FREE2("ccache.conf:1: not an absolute path: \"relative/path\"",
+	CHECK_STR_EQ_FREE2("ccache.conf:1: not an absolute path: \"relative" DIR_DELIM_STRING "path\"",
 	                   errmsg);
 
 	create_file("ccache.conf", "base_dir =");

@@ -199,6 +199,8 @@ bool read_file(const char *path, size_t size_hint, char **data, size_t *size);
 char *read_text_file(const char *path, size_t size_hint);
 char *subst_env_in_string(const char *str, char **errmsg);
 void set_cloexec_flag(int fd);
+char** strsplit (const char *string, const char *delimiter, int max_tokens);
+char * strreplace (const char *string, const char *search, const char *replacement);
 
 // ----------------------------------------------------------------------------
 // stats.c
@@ -297,13 +299,18 @@ void add_exe_ext_if_no_to_fullpath(char *full_path_win_ext, size_t max_size,
 #    define execv(a,b) win32execute(a,b,0,-1,-1)
 #    define execute(a,b,c,d) win32execute(*(a),a,1,b,c)
 #    define DIR_DELIM_CH '\\'
+#    define DIR_DELIM_STRING "\\"
+#    define IS_DIR_SEPARATOR(c) ((c) == DIR_DELIM_CH || (c) == '/')
 #    define PATH_DELIM ";"
 #    define F_RDLCK 0
 #    define F_WRLCK 0
 #else
 #    define DIR_DELIM_CH '/'
+#    define DIR_DELIM_STRING "/"
 #    define PATH_DELIM ":"
+#    define IS_DIR_SEPARATOR(c) ((c) == DIR_DELIM_CH)
 #endif
+
 
 #ifndef MAX
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))

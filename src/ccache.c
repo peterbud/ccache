@@ -580,7 +580,7 @@ remember_include_file(char *path, struct mdfour *cpp_hash, bool system)
 	// Canonicalize path for comparison; clang uses ./header.h.
 	char *canonical = path;
 	size_t canonical_len = path_len;
-	if (canonical[0] == '.' && canonical[1] == '/') {
+	if (canonical[0] == '.' && canonical[1] == DIR_DELIM_CH) {
 		canonical += 2;
 		canonical_len -= 2;
 	}
@@ -700,6 +700,9 @@ make_relative_path(char *path)
 	if (path[0] == '/') {
 		path++;  // Skip leading slash.
 	}
+	char * temppath = strreplace(path, "/", "\\");
+	free(path);
+	path = temppath;
 #endif
 
 	// x_realpath only works for existing paths, so if path doesn't exist, try
@@ -729,7 +732,7 @@ make_relative_path(char *path)
 		char *relpath = get_relative_path(get_current_working_dir(), canon_path);
 		free(canon_path);
 		if (path_suffix) {
-			path = format("%s/%s", relpath, path_suffix);
+			path = format("%s" DIR_DELIM_STRING "%s", relpath, path_suffix);
 			free(relpath);
 			free(path_suffix);
 			return path;
@@ -870,6 +873,17 @@ process_preprocessed_file(struct mdfour *hash, const char *path, bool pump)
 			}
 			// p and q span the include file path.
 			char *inc_path = x_strndup(p, q - p);
+#ifdef _WIN32
+			// gcc-E [file.c] -g adds CWD with double forward slashes
+			// like:
+			// # 1 "C:\\msys64\\home\\user\\test//"
+			// double forward slashes should be replaced with simple slashes
+			char * tmp_inc_path;
+			tmp_inc_path = strreplace(inc_path, "\\\\", "\\");
+			free(inc_path);
+			inc_path = tmp_inc_path;
+#endif
+
 			if (!has_absolute_include_headers) {
 				has_absolute_include_headers = is_absolute_path(inc_path);
 			}
@@ -1381,6 +1395,8 @@ get_object_name_from_cpp(struct args *args, struct mdfour *hash)
 		// and directly form the correct i_tmpfile.
 		path_stdout = input_file;
 		status = 0;
+		// in direct .i mode close path_stderr_fd explicitely, as it is not used
+		close(path_stderr_fd);
 	} else {
 		// Run cpp on the input file to obtain the .i.
 
@@ -2720,11 +2736,33 @@ cc_process_args(struct args *args, struct args **preprocessor_args,
 		// Same as above but options with concatenated argument beginning with a
 		// slash.
 		if (argv[i][0] == '-') {
+#ifndef _WIN32
 			char *slash_pos = strchr(argv[i], '/');
+#else
+			// On windows concatenated argumets formed
+			// like -IC:\path\to\file
+			// or -IC:/path/to/file
+			char * slash_pos;
+			slash_pos = strstr(argv[i], (char*)":\\");
+			if(slash_pos == NULL) {
+				slash_pos= strstr(argv[i], (char*)":/");
+			}
+			if( slash_pos != NULL) {
+				slash_pos--;
+			}
+#endif //  _WIN32
 			if (slash_pos) {
 				char *option = x_strndup(argv[i], slash_pos - argv[i]);
 				if (compopt_takes_concat_arg(option) && compopt_takes_path(option)) {
-					char *relpath = make_relative_path(x_strdup(slash_pos));
+					char *relpath;
+#ifdef _WIN32
+					// Unify directory separators
+					char * temppath = strreplace(slash_pos, "/", "\\");
+					relpath = make_relative_path(x_strdup(temppath));
+					free(temppath);
+#else
+					relpath = make_relative_path(x_strdup(slash_pos));
+#endif // _WIN32
 					char *new_option = format("%s%s", option, relpath);
 					if (compopt_affects_cpp(option)) {
 						args_add(cpp_args, new_option);
@@ -2816,6 +2854,11 @@ cc_process_args(struct args *args, struct args **preprocessor_args,
 			input_file = x_strdup(argv[i]);
 		} else {
 			// Rewrite to relative to increase hit rate.
+#ifdef _WIN32
+			char *temppath = strreplace(argv[i], "/", "\\");
+			free(argv[i]);
+			argv[i] = temppath;
+#endif
 			input_file = make_relative_path(x_strdup(argv[i]));
 		}
 	} // for

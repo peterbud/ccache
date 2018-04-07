@@ -638,6 +638,8 @@ format(const char *format, ...)
 char *
 x_strdup(const char *s)
 {
+	if (!s) return NULL;
+
 	char *ret = strdup(s);
 	if (!ret) {
 		fatal("Out of memory in x_strdup");
@@ -831,41 +833,113 @@ traverse(const char *dir, void (*fn)(const char *, struct stat *))
 char *
 basename(const char *path)
 {
-	char *p = strrchr(path, '/');
-	if (p) {
-		path = p + 1;
-	}
+	char *base = strrchr(path, DIR_DELIM_CH);
+
 #ifdef _WIN32
-	p = strrchr(path, '\\');
-	if (p) {
-		path = p + 1;
-	}
+	// For win32 accept both '\\' and '/'
+	char *q = strrchr(path, '/');
+	if (base == NULL || (q != NULL && q > base))
+		base = q;
 #endif
 
-	return x_strdup(path);
+	if (base) {
+		base = base + 1;
+		return x_strdup(base);
+	}
+
+#ifdef _WIN32
+	if (isalpha(path[0]) && path[1] == ':')
+		return x_strdup(path + 2);
+#endif
+
+return x_strdup(path);
 }
 
 // Return the dir name of a file - caller frees.
 char *
 dirname(const char *path)
 {
-	char *s = x_strdup(path);
-	char *p = strrchr(s, '/');
+	//char *s = x_strdup(path);
+	char *base = strrchr(path, DIR_DELIM_CH);
+	unsigned len;
+
 #ifdef _WIN32
-	char *p2 = strrchr(s, '\\');
-	if (!p || (p2 && p < p2)) {
-		p = p2;
+	// For win32 accept both '\\' and '/'
+	char *q = strrchr(path, '/');
+	if (base == NULL || (q != NULL && q > base)) {
+		base = q;
 	}
 #endif
-	if (!p) {
-		free(s);
-		s = x_strdup(".");
-	} else if (p == s) {
-		*(p + 1) = 0;
-	} else {
-		*p = 0;
+
+	if (!base) {
+		// No directory separator found
+#ifdef _WIN32
+		if (isalpha(path[0]) && path[1] == ':') {
+			char drive_colon_dot[4];
+
+			drive_colon_dot[0] = path[0];
+			drive_colon_dot[1] = ':';
+			drive_colon_dot[2] = '.';
+			drive_colon_dot[3] = '\0';
+
+			return x_strdup (drive_colon_dot);
+		}
+#endif
+		return x_strdup (".");
 	}
-	return s;
+
+	while (base > path && IS_DIR_SEPARATOR (*base)) {
+		base--;
+	}
+
+#ifdef _WIN32
+	/* base points to the char before the last slash.
+	*
+	* In case file_name is the root of a drive (X:\) or a child of the
+	* root of a drive (X:\foo), include the slash.
+	*
+	* In case file_name is the root share of an UNC path
+	* (\\server\share), add a slash, returning \\server\share\ .
+	*
+	* In case file_name is a direct child of a share in an UNC path
+	* (\\server\share\foo), include the slash after the share name,
+	* returning \\server\share\ .
+	*/
+	if (base == path + 1 && isalpha(path[0]) && path[1] == ':') {
+		base++;
+	}
+	else if (IS_DIR_SEPARATOR (path[0]) && IS_DIR_SEPARATOR (path[1]) &&
+		path[2] && !IS_DIR_SEPARATOR (path[2]) && base >= path + 2) {
+
+		const char *p = path + 2;
+		while (*p && !IS_DIR_SEPARATOR (*p))
+			p++;
+
+		if (p == base + 1) {
+			len = (int) strlen (path) + 1;
+			base = x_malloc (len + 1);
+			strcpy (base, path);
+			base[len-1] = DIR_DELIM_CH;
+			base[len] = 0;
+			return base;
+		}
+
+		if (IS_DIR_SEPARATOR (*p)) {
+			p++;
+			while (*p && !IS_DIR_SEPARATOR (*p))
+				p++;
+			if (p == base + 1)
+			base++;
+		}
+	}
+#endif
+
+	len = (unsigned) 1 + base - path;
+	base = x_malloc (len + 1);
+	memmove (base, path, len);
+	base[len] = 0;
+
+	return base;
 }
 
 // Return the file extension (including the dot) of a path as a pointer into
@@ -879,9 +953,15 @@ get_extension(const char *path)
 		if (*p == '.') {
 			return p;
 		}
+		if (*p == DIR_DELIM_CH) {
+			break;
+		}
+#ifdef _WIN32
+		// For win32 accept both '\\' and '/'
 		if (*p == '/') {
 			break;
 		}
+#endif
 	}
 	return &path[len];
 }
@@ -1084,8 +1164,8 @@ x_realpath(const char *path)
 		path++;  // Skip leading slash.
 	}
 	HANDLE path_handle = CreateFile(
-	  path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-	  FILE_ATTRIBUTE_NORMAL, NULL);
+		path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL, NULL);
 	if (INVALID_HANDLE_VALUE != path_handle) {
 #ifdef HAVE_GETFINALPATHNAMEBYHANDLEW
 		GetFinalPathNameByHandle(path_handle, ret, maxlen, FILE_NAME_NORMALIZED);
@@ -1095,7 +1175,14 @@ x_realpath(const char *path)
 		CloseHandle(path_handle);
 		p = ret + 4; // Strip \\?\ from the file name.
 	} else {
-		snprintf(ret, maxlen, "%s", path);
+		char *temppath = strreplace(path, "/", "\\");
+		if (temppath) {
+			snprintf(ret, maxlen, "%s", temppath);
+		}
+		else {
+			snprintf(ret, maxlen, "%s", path);
+		}
+		free(temppath);
 		p = ret;
 	}
 #else
@@ -1243,10 +1330,24 @@ get_cwd(void)
 	if (!cwd) {
 		return NULL;
 	}
+	cc_log("get_cwd: CWD %s",cwd);
+#if defined(_WIN32)
+	// Sanitize the path
+	char *temppath = strreplace(cwd, "/", "\\");
+	free(cwd);
+	cwd = temppath;
+#endif
+
 	char *pwd = getenv("PWD");
+	cc_log("get_cwd: PWD %s",pwd);
 	if (!pwd) {
 		return cwd;
 	}
+#if defined(_WIN32)
+	// Sanitize the path
+	temppath = strreplace(pwd, "/", "\\");
+	pwd= temppath;
+#endif
 	if (stat(pwd, &st_pwd) != 0) {
 		return cwd;
 	}
@@ -1290,7 +1391,12 @@ common_dir_prefix_length(const char *s1, const char *s2)
 		++p1;
 		++p2;
 	}
-	while ((*p1 && *p1 != '/') || (*p2 && *p2 != '/')) {
+#if defined(_WIN32)
+	// accept both dir separator
+	while ((*p1 && *p1 != DIR_DELIM_CH && *p1 != '/') || (*p2 && *p2 != DIR_DELIM_CH && *p2 != '/')) {
+#else
+	while ((*p1 && *p1 != DIR_DELIM_CH) || (*p2 && *p2 != DIR_DELIM_CH)) {
+#endif
 		p1--;
 		p2--;
 	}
@@ -1333,18 +1439,24 @@ get_relative_path(const char *from, const char *to)
 
 	result = x_strdup("");
 	common_prefix_len = common_dir_prefix_length(from, to);
-	if (common_prefix_len > 0 || !str_eq(from, "/")) {
+	if (common_prefix_len > 0 || (!str_eq(from, DIR_DELIM_STRING) && !str_eq(from, "/"))) {
 		const char *p;
 		for (p = from + common_prefix_len; *p; p++) {
+			if (*p == DIR_DELIM_CH) {
+				reformat(&result, ".." DIR_DELIM_STRING "%s", result);
+			}
+#if defined(_WIN32)
+			//accept and handle both delimiters on Windows
 			if (*p == '/') {
 				reformat(&result, "../%s", result);
 			}
+#endif
 		}
 	}
 	if (strlen(to) > common_prefix_len) {
 		reformat(&result, "%s%s", result, to + common_prefix_len + 1);
 	}
-	for (int i = strlen(result) - 1; i >= 0 && result[i] == '/'; i--) {
+	for (int i = strlen(result) - 1; i >= 0 && (result[i] == DIR_DELIM_CH || result[i] == '/'); i--) {
 		result[i] = '\0';
 	}
 	if (str_eq(result, "")) {
@@ -1361,7 +1473,7 @@ is_absolute_path(const char *path)
 #ifdef _WIN32
 	return path[0] && path[1] == ':';
 #else
-	return path[0] == '/';
+	return path[0] == DIR_DELIM_CH;
 #endif
 }
 
@@ -1369,11 +1481,11 @@ is_absolute_path(const char *path)
 bool
 is_full_path(const char *path)
 {
-	if (strchr(path, '/')) {
+	if (strchr(path, DIR_DELIM_CH)) {
 		return true;
 	}
 #ifdef _WIN32
-	if (strchr(path, '\\')) {
+	if (strchr(path, '/')) {
 		return true;
 	}
 #endif
@@ -1687,4 +1799,151 @@ set_cloexec_flag(int fd)
 #else
 	(void)fd;
 #endif
+}
+
+char *
+x_stpcpy (char *dest, const char *src)
+{
+#ifdef HAVE_STPCPY
+	return stpcpy (dest, src);
+#else
+	char *d = dest;
+	const char *s = src;
+
+	do
+		*d++ = *s;
+	while (*s++ != '\0');
+
+	return d - 1;
+#endif
+}
+
+void
+strfreev (char **str_array)
+{
+	if (str_array)
+	{
+		int i;
+
+		for (i = 0; str_array[i] != NULL; i++)
+		free (str_array[i]);
+
+		free (str_array);
+	}
+}
+
+char**
+strsplit (const char *string, const char *delimiter, int max_tokens)
+{
+	const char *remainder;
+	unsigned n = 0;
+	char** str_array;
+	char* s;
+	char** tmp_array;
+
+	if (!string) return NULL;
+
+	tmp_array = x_malloc (sizeof(char*) * 1024);
+	if (max_tokens < 1)
+		max_tokens = 1024;
+
+	remainder = string;
+	s = strstr (remainder, delimiter);
+
+	if (s) {
+		unsigned delimiter_len = strlen (delimiter);
+
+		while (--max_tokens && s) {
+			unsigned len;
+			char * token;
+
+			len = s - remainder;
+			token = x_malloc (len + 1);
+			memset(token, '\0', len + 1);
+			strncpy (token, remainder, len);
+			tmp_array[n] = token;
+			n++;
+			remainder = s + delimiter_len;
+			s = strstr (remainder, delimiter);
+		}
+	}
+
+
+	if (*string) {
+		char * token;
+		token = x_malloc (strlen(remainder) + 1);
+		memset(token, '\0', strlen(remainder)+1);
+		strncpy (token, remainder, strlen(remainder));
+		tmp_array[n] = token;
+		n++;
+	}
+
+
+	str_array = x_malloc (sizeof(char*) * (n + 1));
+
+	str_array[n--] = NULL;
+	for (int k = n; k >= 0; k--) {
+		str_array[n--] = tmp_array[k];
+	}
+
+	free (tmp_array);
+
+	return str_array;
+}
+
+char*
+strjoinv (const char *separator, char **str_array)
+{
+  char *string;
+  char *ptr;
+
+  if (separator == NULL)
+    separator = "";
+
+  if (*str_array)
+    {
+      int i;
+      unsigned len;
+      unsigned separator_len;
+
+      separator_len = strlen (separator);
+      /* First part, getting length */
+      len = 1 + strlen (str_array[0]);
+      for (i = 1; str_array[i] != NULL; i++)
+        len += strlen (str_array[i]);
+      len += separator_len * (i - 1);
+
+      /* Second part, building string */
+      string = x_malloc (len+1);
+      ptr = x_stpcpy (string, *str_array);
+      for (i = 1; str_array[i] != NULL; i++)
+        {
+          ptr = x_stpcpy (ptr, separator);
+          ptr = x_stpcpy (ptr, str_array[i]);
+        }
+      }
+  else
+    string = x_strdup ("");
+
+  return string;
+}
+
+char *
+strreplace (const char *string, const char *search, const char *replacement)
+{
+	char *str, **arr;
+
+
+	if (replacement == NULL)
+	replacement = "";
+
+	arr = strsplit (string, search, -1);
+	if (arr != NULL && arr[0] != NULL)
+		str = strjoinv (replacement, arr);
+	else
+		str = x_strdup (string);
+
+	strfreev (arr);
+
+	return str;
 }
