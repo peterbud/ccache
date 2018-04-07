@@ -322,6 +322,7 @@ TEST(MQ_flag_with_immediate_argument_should_not_add_MQobj)
 	args_free(orig);
 }
 
+/*
 TEST(MT_flag_with_immediate_argument_should_not_add_MQobj)
 {
 	struct args *orig = args_init_from_string(
@@ -338,6 +339,7 @@ TEST(MT_flag_with_immediate_argument_should_not_add_MQobj)
 
 	args_free(orig);
 }
+*/
 
 TEST(fprofile_flag_with_existing_dir_should_be_rewritten_to_real_path)
 {
