@@ -18,11 +18,11 @@ shallow_clone: true
 
 environment:
   matrix:
-    # enable shared linking 
-    - MSYSTEM:MINGW64
+    # enable shared linking
+  - MSYSTEM: MINGW64
 
     # enable static linking
-    - MSYSTEM:MINGW32
+  - MSYSTEM: MINGW32
 
 build_script:
   - C:\msys64\usr\bin\pacman --noconfirm --sync --refresh --refresh --sysupgrade --sysupgrade
