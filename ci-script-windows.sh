@@ -61,6 +61,6 @@ message() { local status="${1}"; local items=("${@:2}"); _status message "${stat
 # Install build environment and build
 PATH=/c/msys64/mingw64/bin:$PATH
 execute 'Installing base-devel and toolchain'  pacman -S --needed --noconfirm mingw-w64-x86_64-toolchain
-execute 'Installing dependencies' pacman -S --noconfirm  mingw-w64-x86_64-zlib
+execute 'Installing dependencies' pacman -S --noconfirm  mingw-w64-x86_64{-zlib,-gcc-libs}
 execute 'Building ccache' build_ccache
 execute 'Testing ccache' test_ccache
