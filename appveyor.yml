@@ -20,9 +20,11 @@ environment:
   matrix:
     # enable shared linking
   - MSYSTEM: MINGW64
+    MSYS2_ARCH: x86_64
 
     # enable static linking
   - MSYSTEM: MINGW32
+    MSYS2_ARCH: i686
 
 build_script:
   - C:\msys64\usr\bin\pacman --noconfirm --sync --refresh --refresh --sysupgrade --sysupgrade
