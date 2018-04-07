@@ -65,8 +65,8 @@ failure() { local status="${1}"; local items=("${@:2}"); _status failure "${stat
 success() { local status="${1}"; local items=("${@:2}"); _status success "${status}." "${items[@]}"; exit 0; }
 message() { local status="${1}"; local items=("${@:2}"); _status message "${status}"  "${items[@]}"; }
 # Install build environment and build
-PATH=/c/msys64/mingw64/bin:$PATH
+PATH=/c/msys64/%MSYSTEM%/bin:$PATH
 execute 'Installing base-devel and toolchain'  pacman -S --needed --noconfirm mingw-w64-x86_64-toolchain
-execute 'Installing dependencies' pacman -S --needed --noconfirm  mingw-w64-x86_64{-zlib,-gcc-libs}
+execute 'Installing dependencies' pacman -S --needed --noconfirm  mingw-w64-$MSYS2_ARCH-{zlib,gcc-libs}
 execute 'Building ccache' build_ccache
 execute 'Testing ccache' test_ccache
