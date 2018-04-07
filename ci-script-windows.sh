@@ -54,10 +54,10 @@ test_ccache() {
 cd build
 
 # Not wotking YET
-#make unittest/run.exe
-#./unittest/run.exe -v
+make unittest/run.exe
+./unittest/run.exe -v && TRUE
 
-../test/run -v
+../test/run -v && TRUE
 
 }
 # Status functions
