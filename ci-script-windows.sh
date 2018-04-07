@@ -43,7 +43,7 @@ build_ccache() {
     cd $(cygpath ${APPVEYOR_BUILD_FOLDER})
 ./autogen.sh
     mkdir build && cd build
-CFLAGS="-g -Wno-format" \
+#CFLAGS="-g -Wno-format" \
     ../${_realname}/configure
     
     make
