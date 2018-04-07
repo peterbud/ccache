@@ -54,7 +54,7 @@ test_ccache() {
 cd build
 
 make unittest/run.exe
-./unittest/run.exe
+./unittest/run.exe -v
 
 }
 # Status functions
