@@ -12,7 +12,18 @@
 # a new build using a fresh virtual machine.
 init:
   - git config --global core.autocrlf input
+
 shallow_clone: true
+
+
+environment:
+  matrix:
+    # enable shared linking 
+    - MSYSTEM:MINGW64
+
+    # enable static linking
+    - MSYSTEM:MINGW32
+
 build_script:
   - C:\msys64\usr\bin\pacman --noconfirm --sync --refresh --refresh --sysupgrade --sysupgrade
   - C:\msys64\usr\bin\bash --login -c "$(cygpath ${APPVEYOR_BUILD_FOLDER})/ci-script-windows.sh"
