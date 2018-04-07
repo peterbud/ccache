@@ -52,7 +52,10 @@ CFLAGS="-g -Wno-format" \
 test_ccache() {
     cd $(cygpath ${APPVEYOR_BUILD_FOLDER})
 cd build
-make unittest
+
+make unittest/run.exe
+./unittest/run.exe
+
 }
 # Status functions
 failure() { local status="${1}"; local items=("${@:2}"); _status failure "${status}." "${items[@]}"; exit 1; }
@@ -61,6 +64,6 @@ message() { local status="${1}"; local items=("${@:2}"); _status message "${stat
 # Install build environment and build
 PATH=/c/msys64/mingw64/bin:$PATH
 execute 'Installing base-devel and toolchain'  pacman -S --needed --noconfirm mingw-w64-x86_64-toolchain
-execute 'Installing dependencies' pacman -S --noconfirm  mingw-w64-x86_64{-zlib,-gcc-libs}
+execute 'Installing dependencies' pacman -S --needed --noconfirm  mingw-w64-x86_64{-zlib,-gcc-libs}
 execute 'Building ccache' build_ccache
 execute 'Testing ccache' test_ccache
