@@ -30,5 +30,5 @@ environment:
     MSYS2_ARCH: i686
 
 build_script:
-  - C:\msys64\usr\bin\pacman --noconfirm --sync --refresh --refresh --sysupgrade --sysupgrade
+  - C:\msys64\usr\bin\pacman --noconfirm --sync --refresh --sysupgrade
   - C:\msys64\usr\bin\bash --login -c "$(cygpath ${APPVEYOR_BUILD_FOLDER})/ci-script-windows.sh"
