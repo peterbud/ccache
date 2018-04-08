@@ -46,7 +46,7 @@ build_ccache() {
 #CFLAGS="-g -Wno-format" \
     ../${_realname}/configure
     
-    make $HOST
+    make
 }
 # Test
 test_ccache() {
