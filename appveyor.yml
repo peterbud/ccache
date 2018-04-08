@@ -18,7 +18,10 @@ shallow_clone: true
 
 environment:
   matrix:
-    # enable shared linking
+  - MSYSTEM: MSYS
+    MSYS2_ARCH: 
+
+  # enable shared linking
   - MSYSTEM: MINGW64
     MSYS2_ARCH: x86_64
 
