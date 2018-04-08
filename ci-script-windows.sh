@@ -46,18 +46,19 @@ build_ccache() {
 #CFLAGS="-g -Wno-format" \
     ../${_realname}/configure
     
-    make
+    make $HOST
 }
 # Test
 test_ccache() {
     cd $(cygpath ${APPVEYOR_BUILD_FOLDER})
 cd build
 
-# Not wotking YET
-make unittest/run.exe
-./unittest/run.exe -v && TRUE
+  make ${TEST:-test}
+  # Not wotking YET
+  make unittest/run.exe
+  ./unittest/run.exe -v && TRUE
 
-../test/run -v && TRUE
+  ../test/run -v && TRUE
 
 }
 # Status functions
@@ -66,7 +67,13 @@ success() { local status="${1}"; local items=("${@:2}"); _status success "${stat
 message() { local status="${1}"; local items=("${@:2}"); _status message "${status}"  "${items[@]}"; }
 # Install build environment and build
 PATH=/c/msys64/%MSYSTEM%/bin:$PATH
-execute 'Installing base-devel and toolchain'  pacman -S --needed --noconfirm mingw-w64-$MSYS2_ARCH-toolchain
-execute 'Installing dependencies' pacman -S --needed --noconfirm  mingw-w64-$MSYS2_ARCH-{zlib,gcc-libs}
+if [ $MSYSTEM == MSYS ]
+  execute 'Installing base-devel and toolchain'  pacman -S --needed --noconfirm msys2-devel
+  execute 'Installing dependencies' pacman -S --needed --noconfirm  zlib
+else
+  execute 'Installing base-devel and toolchain'  pacman -S --needed --noconfirm mingw-w64-$MSYS2_ARCH-toolchain
+  execute 'Installing dependencies' pacman -S --needed --noconfirm  mingw-w64-$MSYS2_ARCH-zlib
+fi
+echo "PACKAGE_PREFIX: $PACKAGE_PREFIX"
 execute 'Building ccache' build_ccache
 execute 'Testing ccache' test_ccache
