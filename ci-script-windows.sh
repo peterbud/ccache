@@ -53,13 +53,7 @@ test_ccache() {
     cd $(cygpath ${APPVEYOR_BUILD_FOLDER})
 cd build
 
-  make ${TEST:-test}
-  # Not wotking YET
-  make unittest/run.exe
-  ./unittest/run.exe -v && TRUE
-
-  ../test/run -v && TRUE
-
+  make test
 }
 # Status functions
 failure() { local status="${1}"; local items=("${@:2}"); _status failure "${status}." "${items[@]}"; exit 1; }
