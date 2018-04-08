@@ -67,7 +67,7 @@ success() { local status="${1}"; local items=("${@:2}"); _status success "${stat
 message() { local status="${1}"; local items=("${@:2}"); _status message "${status}"  "${items[@]}"; }
 # Install build environment and build
 PATH=/c/msys64/%MSYSTEM%/bin:$PATH
-if [ $MSYSTEM == MSYS ]
+if [ "$MSYSTEM" == "MSYS" ]; then
   execute 'Installing base-devel and toolchain'  pacman -S --needed --noconfirm msys2-devel
   execute 'Installing dependencies' pacman -S --needed --noconfirm  zlib
 else
