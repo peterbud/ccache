@@ -968,6 +968,7 @@ EOF
     expect_stat 'cache miss' 1
 
     # -------------------------------------------------------------------------
+if ! $HOST_OS_WINDOWS && ! $HOST_OS_CYGWIN; then
     TEST "Symlink to source directory"
 
     mkdir dir
@@ -987,8 +988,9 @@ EOF
     if [ "$(./c)" != OK ]; then
         test_failed "Incorrect header file used"
     fi
-
+fi
     # -------------------------------------------------------------------------
+if ! $HOST_OS_WINDOWS && ! $HOST_OS_CYGWIN; then
     TEST "Symlink to source file"
 
     mkdir dir
@@ -1008,6 +1010,7 @@ EOF
     if [ "$(./c)" != OK ]; then
         test_failed "Incorrect header file used"
     fi
+fi
 
     # -------------------------------------------------------------------------
     TEST ".incbin"
