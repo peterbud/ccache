@@ -4,7 +4,7 @@ SUITE_basedir_SETUP() {
     mkdir -p dir1/src dir1/include
     cat <<EOF >dir1/src/test.c
 #include <stdarg.h>
-#include <test.h>
+#include "test.h"
 EOF
     cat <<EOF >dir1/include/test.h
 int test;
@@ -45,6 +45,7 @@ SUITE_basedir() {
     expect_stat 'cache miss' 2
 
     # -------------------------------------------------------------------------
+if ! $HOST_OS_WINDOWS && ! $HOST_OS_CYGWIN; then
     TEST "Path normalization"
 
     cd dir1
@@ -63,6 +64,7 @@ SUITE_basedir() {
     expect_stat 'cache hit (direct)' 1
     expect_stat 'cache hit (preprocessed)' 0
     expect_stat 'cache miss' 1
+fi
 
     # -------------------------------------------------------------------------
     TEST "Rewriting in stderr"

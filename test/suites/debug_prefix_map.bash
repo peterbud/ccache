@@ -53,6 +53,7 @@ SUITE_debug_prefix_map() {
     fi
 
     # -------------------------------------------------------------------------
+if ! $HOST_OS_WINDOWS && ! $HOST_OS_CYGWIN; then
     TEST "Multiple -fdebug-prefix-map"
 
     cd dir1
@@ -77,4 +78,5 @@ SUITE_debug_prefix_map() {
     if objdump_cmd test.o | grep_cmd "`pwd`" >/dev/null 2>&1; then
         test_failed "Source dir (`pwd`) found in test.o"
     fi
+fi
 }
