@@ -1023,7 +1023,7 @@ parse_size_with_suffix(const char *str, uint64_t *size)
 		return false;
 	}
 
-	while (isspace(*p)) {
+	while (isspace((unsigned char)*p)) {
 		++p;
 	}
 
@@ -1695,7 +1695,7 @@ expand_variable(const char **str, char **result, char **errmsg)
 	}
 
 	const char *q = p;
-	while (isalnum(*q) || *q == '_') {
+	while (isalnum((unsigned char)*q) || *q == '_') {
 		++q;
 	}
 	if (curly) {

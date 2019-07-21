@@ -62,8 +62,8 @@ check_for_temporal_macros(const char *str, size_t len)
 		    && str[i - 7] == '_'
 		    && str[i - 1] == '_'
 		    && str[i - 6] == '_'
-		    && (i < 8 || (str[i - 8] != '_' && !isalnum(str[i - 8])))
-		    && (i + 1 >= len || (str[i + 1] != '_' && !isalnum(str[i + 1])))) {
+		    && (i < 8 || (str[i - 8] != '_' && !isalnum((unsigned char)str[i - 8])))
+		    && (i + 1 >= len || (str[i + 1] != '_' && !isalnum((unsigned char)str[i + 1])))) {
 			// Check the remaining characters to see if the substring is "__DATE__"
 			// or "__TIME__".
 			if (str[i - 5] == 'D' && str[i - 4] == 'A' && str[i - 3] == 'T') {

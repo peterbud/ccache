@@ -82,7 +82,7 @@ out:
 static bool
 parse_line(const char *line, char **key, char **value, char **errmsg)
 {
-#define SKIP_WS(x) do { while (isspace(*x)) { ++x; } } while (false)
+#define SKIP_WS(x) do { while (isspace((unsigned char)*x)) { ++x; } } while (false)
 
 	*key = NULL;
 	*value = NULL;
@@ -93,7 +93,7 @@ parse_line(const char *line, char **key, char **value, char **errmsg)
 		return true;
 	}
 	const char *q = p;
-	while (isalpha(*q) || *q == '_') {
+	while (isalpha((unsigned char)*q) || *q == '_') {
 		++q;
 	}
 	*key = x_strndup(p, q - p);
@@ -114,7 +114,7 @@ parse_line(const char *line, char **key, char **value, char **errmsg)
 		++q;
 	}
 	// Skip trailing whitespace.
-	while (isspace(q[-1])) {
+	while (isspace((unsigned char)q[-1])) {
 		--q;
 	}
 	*value = x_strndup(p, q - p);
