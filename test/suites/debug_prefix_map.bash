@@ -23,6 +23,8 @@ EOF
 grep_cmd() {
     if $HOST_OS_APPLE; then
         grep "( \"$1\" )"
+    elif $HOST_OS_WINDOWS || $HOST_OS_CYGWIN; then
+        test -n "$2" && grep -E "$1|$2" || grep "$1" # accept a relative path for source code, in addition to relocation dir        
     else
         grep ": $1[[:space:]]*$"
     fi
@@ -53,7 +55,6 @@ SUITE_debug_prefix_map() {
     fi
 
     # -------------------------------------------------------------------------
-if ! $HOST_OS_WINDOWS && ! $HOST_OS_CYGWIN; then
     TEST "Multiple -fdebug-prefix-map"
 
     cd dir1
@@ -78,5 +79,4 @@ if ! $HOST_OS_WINDOWS && ! $HOST_OS_CYGWIN; then
     if objdump_cmd test.o | grep_cmd "`pwd`" >/dev/null 2>&1; then
         test_failed "Source dir (`pwd`) found in test.o"
     fi
-fi
 }
