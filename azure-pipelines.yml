@@ -23,3 +23,4 @@ steps:
   - script: |
       choco install msys2 --params="/InstallDir:%CD:~0,2%\msys64 /NoUpdate /NoPath"
     displayName: Install MSYS2
+    condition: eq( variables['Agent.OS'], 'Windows_NT' )
