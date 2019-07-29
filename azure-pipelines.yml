@@ -6,11 +6,11 @@ trigger:
 
 strategy:
   matrix:
-    linux:
+    Linux:
       imageName: 'ubuntu-16.04'
-    mac:
+    macOS:
       imageName: 'macos-10.14'
-    windows:
+    Windows:
       imageName: 'vs2017-win2016'
 
 pool:
@@ -21,10 +21,18 @@ steps:
     clean: true
     displayName: Checkout ccache sources
   - script: |
+      sudo apt install -y elfutils gperf libzstd1-dev libb2-dev
+    displayName: Install and dependencies
+    condition: eq( variables['Agent.OS'], 'Linux' )
+  - script: |
       choco install msys2 --params="/InstallDir:%CD:~0,2%\msys64 /NoUpdate /NoPath"
       set PATH=%CD:~0,2%\msys64\usr\bin;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem
       %CD:~0,2%\msys64\usr\bin\pacman --noconfirm -Syyuu
       %CD:~0,2%\msys64\usr\bin\pacman --noconfirm -Syuu
-    displayName: Install and update MSYS2
+      %CD:~0,2%\msys64\usr\bin\pacman -S --needed --noconfirm msys2-devel
+      %CD:~0,2%\msys64\usr\bin\pacman -S --needed --noconfirm zlib zlib-devel
+    displayName: Install and update MSYS2 and dependencies
+    env: 
+      MSYS2_FC_CACHE_SKIP: 1
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
