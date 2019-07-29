@@ -2,7 +2,7 @@ trigger:
     batch: true
     branches:
         include:
-        - azure-pl
+        - master
 
 strategy:
   matrix:
@@ -23,7 +23,7 @@ steps:
   - script: |
       sudo apt install -y elfutils gperf libzstd1-dev libb2-dev
     displayName: Install dependencies
-    condition: ne( variables['Agent.OS'], 'Windows_NT' )
+    condition: eq( variables['Agent.OS'], 'Linux' )
 
   - script: |
       choco install msys2 --params="/InstallDir:%CD:~0,2%\msys64 /NoUpdate /NoPath"
