@@ -23,7 +23,8 @@ steps:
   - script: |
       sudo apt install -y elfutils gperf libzstd1-dev libb2-dev
     displayName: Install dependencies
-    condition: eq( variables['Agent.OS'], 'Linux' )
+    condition: ne( variables['Agent.OS'], 'Windows_NT' )
+
   - script: |
       choco install msys2 --params="/InstallDir:%CD:~0,2%\msys64 /NoUpdate /NoPath"
       set PATH=%CD:~0,2%\msys64\usr\bin;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem
