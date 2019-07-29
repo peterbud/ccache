@@ -1,0 +1,20 @@
+strategy:
+  matrix:
+    linux:
+      imageName: 'ubuntu-16.04'
+    mac:
+      imageName: 'macos-10.14'
+    windows:
+      imageName: 'vs2017-win2016'
+
+pool:
+  vmImage: $(imageName)
+  
+steps:
+  - checkout: self
+    clean: true
+    displayName: Checkout ccache sources
+  - script: |
+    choco install msys2 --params="/InstallDir:%CD:~0,2%\msys64 /NoUpdate /NoPath"
+    condition: eq( variables['Agent.OS'], 'Windows_NT' )
+    displayName: Install MSYS2
