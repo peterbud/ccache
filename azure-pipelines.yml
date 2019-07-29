@@ -1,3 +1,9 @@
+trigger:
+    batch: true
+    branches:
+        include:
+        - azure-pl
+
 strategy:
   matrix:
     linux:
@@ -16,5 +22,4 @@ steps:
     displayName: Checkout ccache sources
   - script: |
     choco install msys2 --params="/InstallDir:%CD:~0,2%\msys64 /NoUpdate /NoPath"
-    condition: eq( variables['Agent.OS'], 'Windows_NT' )
     displayName: Install MSYS2
