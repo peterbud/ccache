@@ -22,7 +22,7 @@ steps:
     displayName: Checkout ccache sources
   - script: |
       sudo apt install -y elfutils gperf libzstd1-dev libb2-dev
-    displayName: Install and dependencies
+    displayName: Install dependencies
     condition: eq( variables['Agent.OS'], 'Linux' )
   - script: |
       choco install msys2 --params="/InstallDir:%CD:~0,2%\msys64 /NoUpdate /NoPath"
@@ -36,3 +36,11 @@ steps:
       MSYS2_FC_CACHE_SKIP: 1
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
+  - script: |
+      ./autogen.sh
+      ./configure
+      make
+    displayName: Build ccache
+    env:
+      MSYSTEM: MSYS
+      CHERE_INVOKING: yes
